@@ -1,27 +1,33 @@
 import { Schema } from 'mongoose';
 
-export const ClientSchema = new Schema({
-  tg: {
-    from: {
-      id: Number,
-      is_bot: Boolean,
-      first_name: String,
-      last_name: String,
-      username: String,
-      language_code: String,
-    },
-    chat: {
-      id: Number,
-      first_name: String,
-      last_name: String,
-      username: String,
-      type: String
-    }
-  },
-  nominators: [{
-    address: String
-  }]
+export const ChatSchema = new Schema({
+  id: Number,
+  first_name: String,
+  last_name: String,
+  username: String,
+  type: String,
+  state: String
 }, {
-  typeKey: '$type',
   timestamps: {}
 });
+
+export const NominatorSchema = new Schema({
+  chatId: Number,
+  address: String,
+  targets: [String]
+}, {
+  timestamps: {}
+});
+
+export const ValidatorSchame = new Schema({
+  stash: String,
+  identity: {
+    display: String,
+    displayParent: String
+  },
+  commission: String,
+  active: Boolean
+}, {
+  timestamps: {},
+  typeKey: '$type',
+})

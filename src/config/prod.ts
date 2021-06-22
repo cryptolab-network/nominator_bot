@@ -1,4 +1,5 @@
 export =  {
+  CHAIN: process.env.CHAIN,
   TG_TOKEN: process.env.TG_TOKEN,
   API_WSS: process.env.API_WSS,
   MONGO_USERNAME: process.env.MONGO_USERNAME,

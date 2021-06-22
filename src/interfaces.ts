@@ -1,23 +1,27 @@
-export interface ITg {
-  from: {
-    id: number,
-    is_bot: boolean,
-    first_name: string,
-    last_name: string,
-    username: string,
-    language_code: string,
-  },
-  chat: {
-    id: number,
-    first_name: string,
-    last_name: string,
-    username: string,
-    type: string
-  }
+export enum ChatState {
+  idle = 'idle',
+  add = 'add',
+  delete = 'delete',
 }
-export interface IClient {
-  tg: ITg,
-  nominators: [{
-    address: string
-  }]
+
+export enum DbStatusCode {
+  success,
+  exist,
+  error,
 }
+
+export interface IChat {
+  id: number,
+  first_name: string,
+  last_name: string,
+  username: string,
+  type: string,
+  state: ChatState
+}
+
+export interface INominator {
+  chatId: number,
+  address: string,
+  targets: [string]
+}
+

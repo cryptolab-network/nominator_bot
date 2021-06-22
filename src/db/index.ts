@@ -1,12 +1,15 @@
 import mongoose from 'mongoose';
-import { ClientSchema } from './models';
-import { IClient, ITg } from '../interfaces';
+import { ChatSchema, NominatorSchema } from './models';
+import { IChat, ChatState, INominator, DbStatusCode } from '../interfaces';
+import { assert } from 'console';
 
 export class Db {
-  private _clientModel: any;
+  private _chatModel: any;
+  private _nominatorModel: any;
 
   constructor() {
-    this._clientModel = mongoose.model('Client', ClientSchema);
+    this._chatModel = mongoose.model('Chat', ChatSchema);
+    this._nominatorModel = mongoose.model('Nominator', NominatorSchema);
   }
 
   async connect(uri: string): Promise<void> {
@@ -28,23 +31,54 @@ export class Db {
     });
   }
 
-  async updateClient(data: ITg): Promise<boolean> {
-    const client = await this._clientModel.findOne({
-      'tg.from.id': data.from.id,
-      'tg.chat.id': data.chat.id
-    }).exec();
+  async updateChat(data: IChat): Promise<boolean> {
+    const chat = await this._chatModel.findOne({data}).exec();
 
-    if (!client) {
-      const client: any = new this._clientModel({
-        tg: data,
-        nominators: []
-      });
-      return client.save();
+    if (!chat) {
+      const chat: any = new this._chatModel(data);
+      return chat.save();
     } else {
       return true;
     }
   }
 
+  async updateChatStatus(chatId: number, state: ChatState): Promise<DbStatusCode> {
+    try {
+      await this._chatModel.findOneAndUpdate({id: chatId}, { $set: { state }});
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
+
+  async getChat(chatId: number): Promise<IChat | null> {
+    try {
+      return await this._chatModel.findOne({id: chatId}).exec();
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
+  }
+
+  async addNominator(chatId: number, address: string): Promise<DbStatusCode> {
+    try {
+      const data = {
+        chatId,
+        address,
+        targets: []
+      }
+      const nominator = await this._nominatorModel.findOne(data).exec();
+      if (nominator) {
+        return DbStatusCode.exist;
+      }
+      await this._nominatorModel.create(data);
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
 }
 
 
