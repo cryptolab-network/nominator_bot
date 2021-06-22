@@ -79,6 +79,27 @@ export class Db {
       return DbStatusCode.error;
     }
   }
+
+  async getNominators(chatId: number): Promise<string[]> {
+    try {
+      const nominators = await this._nominatorModel.find({chatId}).exec();
+      const addresses = nominators.map((nominator: any) => nominator.address);
+      return addresses;
+    } catch (err) {
+      console.log(err);
+      return [];
+    }
+  }
+
+  async removeNominator(chatId: number, address: string): Promise<DbStatusCode> {
+    try {
+      await this._nominatorModel.findOneAndRemove({chatId, address}).exec();
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
 }
 
 

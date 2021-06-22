@@ -2,7 +2,9 @@ import TelegramBot from 'node-telegram-bot-api';
 import { Db } from './db';
 import { ChatState, IChat, DbStatusCode } from './interfaces';
 import { verifyAddress } from './utils';
-import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccount, addNominatorOk, notNominatorAccount } from './message';
+import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccount, addNominatorOk, noNomiee, noNominators,
+  removeAccount, removeKeyboard, removeNominatorOk
+} from './message';
 import { ChainData } from './chaindata';
 
 export class Telegram {
@@ -16,14 +18,6 @@ export class Telegram {
     this._chainData = chainData;
   }
 
-  async sendMessage (chatId: number, msg: string): Promise<void> {
-    try {
-      this._bot.sendMessage(chatId, msg);
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
   async start (): Promise<void> {
     this._bot.onText(/\/start/, async (msg: any) => {
       const chat: IChat = {
@@ -35,7 +29,7 @@ export class Telegram {
         state: ChatState.idle
       }
       await this._db.updateChat(chat);
-      await this.sendMessage(msg.chat.id, help());
+      await this._bot.sendMessage(msg.chat.id, help());
     });
 
     this._bot.on('message', async (msg) => {
@@ -46,14 +40,27 @@ export class Telegram {
 
       if (data) {
         if (data === '/add') {
-          const result = await this._db.updateChatStatus(msg.chat.id, ChatState.add);
+          const result = await this._db.updateChatStatus(chatId, ChatState.add);
           if (result === DbStatusCode.success) {
-            await this.sendMessage(chatId, addNominator());
+            await this._bot.sendMessage(chatId, addNominator());
           } else {
-            await this.sendMessage(chatId, tryAgainLater());
+            await this._bot.sendMessage(chatId, tryAgainLater());
           }
         } else if (data === '/remove') {
-
+          const nominators = await this._db.getNominators(chatId);
+          console.log(nominators);
+          if (nominators.length === 0) {
+            await this._bot.sendMessage(chatId, noNominators());
+            return;
+          }
+          const result = await this._db.updateChatStatus(chatId, ChatState.remove);
+          if (result === DbStatusCode.success) {
+            await this._bot.sendMessage(chatId, removeAccount(), {
+              reply_markup: removeKeyboard(nominators),
+            });
+          } else {
+            await this._bot.sendMessage(chatId, tryAgainLater());
+          }
         } else if (!data.includes('/')){
           this.processData(chatId, data);
         } else {
@@ -74,32 +81,44 @@ export class Telegram {
           // expect an address
           const address = data;
           if (!verifyAddress(address)) {
-            await this.sendMessage(chatId, invalidAccount());
+            await this._bot.sendMessage(chatId, invalidAccount());
           } else {
             const targets = await this._chainData.queryStakingNominators(address);
             if (targets.length === 0) {
               // not a nominator account
-              await this.sendMessage(chatId, notNominatorAccount());
+              await this._bot.sendMessage(chatId, noNomiee());
               return;
             }
             const status = await this._db.addNominator(chatId, address, targets);
             if (status === DbStatusCode.success) {
-              await this.sendMessage(chatId, addNominatorOk());
+              await this._bot.sendMessage(chatId, addNominatorOk());
             } else if (status === DbStatusCode.exist){
-              await this.sendMessage(chatId, existNominatorAccount());
+              await this._bot.sendMessage(chatId, existNominatorAccount());
             } else {
-              await this.sendMessage(chatId, tryAgainLater());
+              await this._bot.sendMessage(chatId, tryAgainLater());
             }
             await this._db.updateChatStatus(chatId, ChatState.idle);
           }
         }
         break;
-        case ChatState.delete: {
-
+        case ChatState.remove: {
+          // expect an address in the watchlist
+          const address = data;
+          if (!verifyAddress(address)) {
+            await this._bot.sendMessage(chatId, invalidAccount());
+          } else {
+            const status = await this._db.removeNominator(chatId, address);
+            if (status === DbStatusCode.success) {
+              await this._bot.sendMessage(chatId, removeNominatorOk());
+            } else {
+              await this._bot.sendMessage(chatId, tryAgainLater());
+            }
+            await this._db.updateChatStatus(chatId, ChatState.idle);
+          }
         }
         break;
         default: {
-          await this.sendMessage(chatId, help());
+          await this._bot.sendMessage(chatId, help());
         }
       }
     }

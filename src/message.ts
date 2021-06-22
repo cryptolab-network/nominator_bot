@@ -1,4 +1,5 @@
 import dedent from 'dedent';
+import { ReplyKeyboardMarkup } from 'node-telegram-bot-api';
 
 export const help = (): string => {
   return dedent(`
@@ -40,8 +41,36 @@ export const existNominatorAccount = (): string => {
   `);
 }
 
-export const notNominatorAccount = (): string => {
+export const noNomiee = (): string => {
   return dedent(`
     Can't retrive any nominee from on-chain data. Please check your nominator account and input again.
+  `);
+}
+
+export const noNominators = (): string => {
+  return dedent(`
+    There is no nominator account in your watchlist. Use /add to add a new one?
+  `);
+}
+
+export const removeAccount = (): string => {
+  return dedent(`
+    Please select a nominator account.
+  `);
+}
+
+export const removeKeyboard = (addresses: string[]): ReplyKeyboardMarkup => {
+  const buttons = addresses.map(address => [{text: address}]);
+  const replyKeyboardMarkup = {
+    keyboard: buttons,
+    resize_keyboard: true,
+    one_time_keyboard: true
+  }
+  return replyKeyboardMarkup;
+}
+
+export const removeNominatorOk = (): string => {
+  return dedent(`
+    🎉 Your nominator account has been removed ✂️ successfully.
   `);
 }

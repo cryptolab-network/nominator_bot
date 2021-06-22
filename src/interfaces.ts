@@ -1,7 +1,7 @@
 export enum ChatState {
   idle = 'idle',
   add = 'add',
-  delete = 'delete',
+  remove = 'remove',
 }
 
 export enum DbStatusCode {
@@ -22,6 +22,6 @@ export interface IChat {
 export interface INominator {
   chatId: number,
   address: string,
-  targets: [string]
+  targets: string[]
 }
 
