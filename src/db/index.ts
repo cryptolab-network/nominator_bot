@@ -61,12 +61,12 @@ export class Db {
     }
   }
 
-  async addNominator(chatId: number, address: string): Promise<DbStatusCode> {
+  async addNominator(chatId: number, address: string, targets: string[]): Promise<DbStatusCode> {
     try {
       const data = {
         chatId,
         address,
-        targets: []
+        targets
       }
       const nominator = await this._nominatorModel.findOne(data).exec();
       if (nominator) {

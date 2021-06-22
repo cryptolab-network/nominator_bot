@@ -2,14 +2,18 @@ import TelegramBot from 'node-telegram-bot-api';
 import { Db } from './db';
 import { ChatState, IChat, DbStatusCode } from './interfaces';
 import { verifyAddress } from './utils';
-import { help, addAccount, tryAgainLater, invalidAccount, existAccount, successAddAccount } from './message';
+import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccount, addNominatorOk, notNominatorAccount } from './message';
+import { ChainData } from './chaindata';
 
 export class Telegram {
   private _bot: TelegramBot;
   private _db: Db;
-  constructor(token: string, db: Db) {
+  private _chainData: ChainData;
+
+  constructor(token: string, db: Db, chainData: ChainData) {
     this._bot = new TelegramBot(token, {polling: true});
     this._db = db;
+    this._chainData = chainData;
   }
 
   async sendMessage (chatId: number, msg: string): Promise<void> {
@@ -34,26 +38,6 @@ export class Telegram {
       await this.sendMessage(msg.chat.id, help());
     });
 
-    // command: /add address
-    this._bot.onText(/\/add (.+)/, async (msg: any, match: any) => {
-      console.log(`in /add account`)
-      const chatId = msg.chat.id;
-      const address = match[1];
-      if (!verifyAddress(address)) {
-        await this.sendMessage(chatId, invalidAccount());
-      } else {
-        const status = await this._db.addNominator(chatId, address);
-        if (status === DbStatusCode.success) {
-          await this.sendMessage(chatId, successAddAccount());
-        } else if (status === DbStatusCode.exist){
-          await this.sendMessage(chatId, existAccount());
-        } else {
-          await this.sendMessage(chatId, tryAgainLater());
-        }
-        await this._db.updateChatStatus(chatId, ChatState.idle);
-      }
-    });
-
     this._bot.on('message', async (msg) => {
       console.log(msg);
 
@@ -64,7 +48,7 @@ export class Telegram {
         if (data === '/add') {
           const result = await this._db.updateChatStatus(msg.chat.id, ChatState.add);
           if (result === DbStatusCode.success) {
-            await this.sendMessage(chatId, addAccount());
+            await this.sendMessage(chatId, addNominator());
           } else {
             await this.sendMessage(chatId, tryAgainLater());
           }
@@ -88,14 +72,21 @@ export class Telegram {
       switch(chat.state) {
         case ChatState.add: {
           // expect an address
-          if (!verifyAddress(data)) {
+          const address = data;
+          if (!verifyAddress(address)) {
             await this.sendMessage(chatId, invalidAccount());
           } else {
-            const status = await this._db.addNominator(chatId, data);
+            const targets = await this._chainData.queryStakingNominators(address);
+            if (targets.length === 0) {
+              // not a nominator account
+              await this.sendMessage(chatId, notNominatorAccount());
+              return;
+            }
+            const status = await this._db.addNominator(chatId, address, targets);
             if (status === DbStatusCode.success) {
-              await this.sendMessage(chatId, successAddAccount());
+              await this.sendMessage(chatId, addNominatorOk());
             } else if (status === DbStatusCode.exist){
-              await this.sendMessage(chatId, existAccount());
+              await this.sendMessage(chatId, existNominatorAccount());
             } else {
               await this.sendMessage(chatId, tryAgainLater());
             }

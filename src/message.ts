@@ -4,12 +4,13 @@ export const help = (): string => {
   return dedent(`
     🙌 Welcome. This bot helps you to monitor the status of the validators you nominated.
 
-    /add address - 🆕 add an address to your watchlist.
+    /add - 🆕 add an address to your watchlist.
     /remove - ✂️ remove an address from your watchlist.
+    /list - 
   `);
 }
 
-export const addAccount = (): string => {
+export const addNominator = (): string => {
   return dedent(`
     Please enter your nominator account.
   `);
@@ -27,14 +28,20 @@ export const invalidAccount = (): string => {
   `);
 }
 
-export const successAddAccount = (): string => {
+export const addNominatorOk = (): string => {
   return dedent(`
-    🎉 Your nominator account has been added.
+    🎉 Your nominator account has been added successfully.
   `);
 }
 
-export const existAccount = (): string => {
+export const existNominatorAccount = (): string => {
   return dedent(`
-    The account is already in the watchlist.
+    Your nominator account is already added.
+  `);
+}
+
+export const notNominatorAccount = (): string => {
+  return dedent(`
+    Can't retrive any nominee from on-chain data. Please check your nominator account and input again.
   `);
 }
