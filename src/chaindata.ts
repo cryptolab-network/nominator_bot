@@ -1,4 +1,5 @@
 import { ApiHandler } from './ApiHandler';
+import { INominatorInfo } from './interfaces';
 export class ChainData {
   private _apiHandler: ApiHandler;
   constructor(apiHandler: ApiHandler) {
@@ -14,4 +15,29 @@ export class ChainData {
     const targets = nomination['targets'];
     return targets;
   }
+
+  async queryNominatorInfo(address: string): Promise<INominatorInfo> {
+    const api = this._apiHandler.getApi();
+    let [balances, bonded, payee] = await Promise.all([
+      api.derive.balances.all(address),
+      api.query.staking.bonded(address),
+      api.query.staking.payee(address)
+    ]);
+    const controller = bonded.isNone ? '' : bonded.toString();
+    return {
+      address,
+      controller,
+      rewardDestination: payee.isStaked ? address : controller,
+      availableBalance: balances.freeBalance,
+      freeBalance: balances.freeBalance,
+      lockedBalance: balances.lockedBalance,
+      reservedBalance: balances.reservedBalance
+    }
+  }
 }
+
+
+
+// api.derive.balances.all
+// api.query.staking.bonded --> controller
+// api.query.staking.payee --> reward destination, eg. staked, Controller

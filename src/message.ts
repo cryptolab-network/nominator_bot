@@ -1,5 +1,6 @@
 import dedent from 'dedent';
 import { ReplyKeyboardMarkup } from 'node-telegram-bot-api';
+import { INominatorInfo } from './interfaces';
 
 export const help = (): string => {
   return dedent(`
@@ -73,4 +74,24 @@ export const removeNominatorOk = (): string => {
   return dedent(`
     🎉 Your nominator account has been removed ✂️ successfully.
   `);
+}
+
+export const listAccount = (): string => {
+  return dedent(`
+    Select an account to show its info
+  `);
+}
+
+export const listKeyboard = (addresses: string[]): ReplyKeyboardMarkup => {
+  const buttons = addresses.map(address => [{text: address}]);
+  const replyKeyboardMarkup = {
+    keyboard: buttons,
+    resize_keyboard: true,
+    one_time_keyboard: true
+  }
+  return replyKeyboardMarkup;
+}
+
+export const showNomintorInfo = (info: INominatorInfo): string => {
+  return JSON.stringify(info, undefined, 1);
 }

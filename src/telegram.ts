@@ -3,7 +3,7 @@ import { Db } from './db';
 import { ChatState, IChat, DbStatusCode } from './interfaces';
 import { verifyAddress } from './utils';
 import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccount, addNominatorOk, noNomiee, noNominators,
-  removeAccount, removeKeyboard, removeNominatorOk
+  removeAccount, removeKeyboard, removeNominatorOk, listKeyboard, listAccount, showNomintorInfo
 } from './message';
 import { ChainData } from './chaindata';
 
@@ -48,7 +48,6 @@ export class Telegram {
           }
         } else if (data === '/remove') {
           const nominators = await this._db.getNominators(chatId);
-          console.log(nominators);
           if (nominators.length === 0) {
             await this._bot.sendMessage(chatId, noNominators());
             return;
@@ -61,10 +60,24 @@ export class Telegram {
           } else {
             await this._bot.sendMessage(chatId, tryAgainLater());
           }
+        } else if (data === '/list') {
+          const nominators = await this._db.getNominators(chatId);
+          if (nominators.length === 0) {
+            await this._bot.sendMessage(chatId, noNominators());
+            return;
+          }
+          const result = await this._db.updateChatStatus(chatId, ChatState.list);
+          if (result === DbStatusCode.success) {
+            await this._bot.sendMessage(chatId, listAccount(), {
+              reply_markup: listKeyboard(nominators),
+            });
+          } else {
+            await this._bot.sendMessage(chatId, tryAgainLater());
+          }
         } else if (!data.includes('/')){
           this.processData(chatId, data);
         } else {
-
+          await this._bot.sendMessage(chatId, help());
         }
       }
     });
@@ -110,6 +123,24 @@ export class Telegram {
             const status = await this._db.removeNominator(chatId, address);
             if (status === DbStatusCode.success) {
               await this._bot.sendMessage(chatId, removeNominatorOk());
+            } else {
+              await this._bot.sendMessage(chatId, tryAgainLater());
+            }
+            await this._db.updateChatStatus(chatId, ChatState.idle);
+          }
+        }
+        break;
+        case ChatState.list: {
+          // expect an address in the watchlist
+          const address = data;
+          if (!verifyAddress(address)) {
+            await this._bot.sendMessage(chatId, invalidAccount());
+          } else {
+            const nominator = await this._db.getNominator(chatId, address);
+            let nominatorInfo = await this._chainData.queryNominatorInfo(address);
+            nominatorInfo.nomineeCount = nominator?.targets.length;
+            if (nominator) {
+              await this._bot.sendMessage(chatId, showNomintorInfo(nominatorInfo));
             } else {
               await this._bot.sendMessage(chatId, tryAgainLater());
             }

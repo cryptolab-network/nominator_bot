@@ -91,6 +91,16 @@ export class Db {
     }
   }
 
+  async getNominator(chatId: number, address: string): Promise<INominator | null> {
+    try {
+      const nominator = await this._nominatorModel.findOne({chatId, address}).exec();
+      return nominator;
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
+  }
+
   async removeNominator(chatId: number, address: string): Promise<DbStatusCode> {
     try {
       await this._nominatorModel.findOneAndRemove({chatId, address}).exec();
