@@ -13,7 +13,7 @@ export const verifyAddress = (address: string): boolean => {
     if (keys.CHAIN === 'Kusama') {
       return (address.length === 47 && address.match(/[C-Z].+/)?.index === 0);
     } else if (keys.CHAIN === 'Polkadot') {
-      return (address.length === 48 && address.match(/1+/)?.index === 0);
+      return ((address.length === 48 || address.length === 47) && address.match(/1+/)?.index === 0);
     }
     return false;
   } catch (error) {
