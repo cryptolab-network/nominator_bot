@@ -15,7 +15,7 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
-    "@polkadot/api": "^4.15.1",
+    "@polkadot/api": "^5.8.1",
     "@types/dedent": "^0.7.0",
     "@types/node": "^15.12.2",
     "@types/node-telegram-bot-api": "^0.51.1",
