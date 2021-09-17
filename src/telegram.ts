@@ -6,6 +6,7 @@ import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccoun
   removeAccount, removeKeyboard, removeNominatorOk, listKeyboard, listAccount, showNomintorInfo
 } from './message';
 import { ChainData } from './chaindata';
+import { apiGetInfoNominator } from './AxiosHandler';
 
 export class Telegram {
   private _bot: TelegramBot;
@@ -47,7 +48,7 @@ export class Telegram {
             await this._bot.sendMessage(chatId, tryAgainLater());
           }
         } else if (data === '/remove') {
-          const nominators = await this._db.getNominators(chatId);
+          const nominators = await this._db.getAllNominators(chatId);
           if (nominators.length === 0) {
             await this._bot.sendMessage(chatId, noNominators());
             return;
@@ -61,7 +62,7 @@ export class Telegram {
             await this._bot.sendMessage(chatId, tryAgainLater());
           }
         } else if (data === '/list') {
-          const nominators = await this._db.getNominators(chatId);
+          const nominators = await this._db.getAllNominators(chatId);
           if (nominators.length === 0) {
             await this._bot.sendMessage(chatId, noNominators());
             return;
@@ -100,15 +101,16 @@ export class Telegram {
             if (targets.length === 0) {
               // not a nominator account
               await this._bot.sendMessage(chatId, noNomiee());
-              return;
-            }
-            const status = await this._db.addNominator(chatId, address, targets);
-            if (status === DbStatusCode.success) {
-              await this._bot.sendMessage(chatId, addNominatorOk());
-            } else if (status === DbStatusCode.exist){
-              await this._bot.sendMessage(chatId, existNominatorAccount());
+              // return;
             } else {
-              await this._bot.sendMessage(chatId, tryAgainLater());
+              const status = await this._db.addNominator(chatId, address, targets);
+              if (status === DbStatusCode.success) {
+                await this._bot.sendMessage(chatId, addNominatorOk());
+              } else if (status === DbStatusCode.exist){
+                await this._bot.sendMessage(chatId, existNominatorAccount());
+              } else {
+                await this._bot.sendMessage(chatId, tryAgainLater());
+              }
             }
             await this._db.updateChatStatus(chatId, ChatState.idle);
           }
@@ -137,9 +139,15 @@ export class Telegram {
             await this._bot.sendMessage(chatId, invalidAccount());
           } else {
             const nominator = await this._db.getNominator(chatId, address);
-            let nominatorInfo = await this._chainData.queryNominatorInfo(address);
-            nominatorInfo.nomineeCount = nominator?.targets.length;
-            if (nominator) {
+            // let nominatorInfo = await this._chainData.queryNominatorInfo(address);
+            let nominatorInfo = await apiGetInfoNominator({
+              params: {
+                chain: 'KSM',
+                id: address
+              }
+            });
+            // nominatorInfo.nomineeCount = nominator?.targets.length;
+            if (nominator && nominatorInfo) {
               await this._bot.sendMessage(chatId, showNomintorInfo(nominatorInfo));
             } else {
               await this._bot.sendMessage(chatId, tryAgainLater());
@@ -153,6 +161,10 @@ export class Telegram {
         }
       }
     }
+  }
+
+  getBot() {
+    return this._bot;
   }
 
 }

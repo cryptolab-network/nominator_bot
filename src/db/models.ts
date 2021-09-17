@@ -1,4 +1,5 @@
 import { Schema } from 'mongoose';
+import { NotificationType } from '../interfaces';
 
 export const ChatSchema = new Schema({
   id: Number,
@@ -8,7 +9,8 @@ export const ChatSchema = new Schema({
   type: String,
   state: String
 }, {
-  timestamps: {}
+  timestamps: {},
+  typeKey: '$type',
 });
 
 export const NominatorSchema = new Schema({
@@ -16,10 +18,11 @@ export const NominatorSchema = new Schema({
   address: String,
   targets: [String]
 }, {
-  timestamps: {}
+  timestamps: {},
+  typeKey: '$type',
 });
 
-export const ValidatorSchame = new Schema({
+export const ValidatorSchema = new Schema({
   stash: String,
   identity: {
     display: String,
@@ -27,6 +30,17 @@ export const ValidatorSchame = new Schema({
   },
   commission: String,
   active: Boolean
+}, {
+  timestamps: {},
+  typeKey: '$type',
+})
+
+export const NotificationSchema = new Schema({
+  type: String,
+  eventHash: String,
+  chatId: Number,
+  message: String,
+  sent: Boolean
 }, {
   timestamps: {},
   typeKey: '$type',

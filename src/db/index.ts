@@ -1,15 +1,17 @@
 import mongoose from 'mongoose';
-import { ChatSchema, NominatorSchema } from './models';
-import { IChat, ChatState, INominator, DbStatusCode } from '../interfaces';
+import { ChatSchema, NominatorSchema, NotificationSchema } from './models';
+import { IChat, ChatState, INominator, DbStatusCode, INotification, NotificationType } from '../interfaces';
 import { assert } from 'console';
 
 export class Db {
   private _chatModel: any;
   private _nominatorModel: any;
+  private _notificationModel: any;
 
   constructor() {
     this._chatModel = mongoose.model('Chat', ChatSchema);
     this._nominatorModel = mongoose.model('Nominator', NominatorSchema);
+    this._notificationModel = mongoose.model('Notification', NotificationSchema);
   }
 
   async connect(uri: string): Promise<void> {
@@ -61,6 +63,15 @@ export class Db {
     }
   }
 
+  async getAllChats(): Promise<IChat[] | null> {
+    try {
+      return await this._chatModel.find().exec();
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
+  }
+
   async addNominator(chatId: number, address: string, targets: string[]): Promise<DbStatusCode> {
     try {
       const data = {
@@ -80,7 +91,7 @@ export class Db {
     }
   }
 
-  async getNominators(chatId: number): Promise<string[]> {
+  async getAllNominators(chatId: number): Promise<string[]> {
     try {
       const nominators = await this._nominatorModel.find({chatId}).exec();
       const addresses = nominators.map((nominator: any) => nominator.address);
@@ -104,6 +115,53 @@ export class Db {
   async removeNominator(chatId: number, address: string): Promise<DbStatusCode> {
     try {
       await this._nominatorModel.findOneAndRemove({chatId, address}).exec();
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
+
+  async addNotification(data: INotification): Promise<DbStatusCode> {
+    try {
+      switch(data.type) {
+        case NotificationType.event:
+          // check if event is already added by eventHash
+          const notification = await this._notificationModel.findOne({eventHash: data.eventHash}).exec();
+          if (notification) {
+            return DbStatusCode.exist;
+          }
+          await this._notificationModel.create(data);
+          return DbStatusCode.success;
+          break;
+        default:
+          console.log(`wrong type`);
+          return DbStatusCode.error;
+      }
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
+
+  async getUnsentNotifications(): Promise<INotification[] | null> {
+    try {
+      return this._notificationModel.find({sent: false}).exec();
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
+  }
+
+  async updateNotificationToSent(_id: string): Promise<DbStatusCode> {
+    try {
+      await this._notificationModel.findOneAndUpdate({
+        '_id': _id
+      }, {
+        $set: {
+          sent: true
+        }
+      });
       return DbStatusCode.success;
     } catch (err) {
       console.log(err);

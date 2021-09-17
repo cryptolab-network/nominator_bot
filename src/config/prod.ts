@@ -6,5 +6,6 @@ export =  {
   MONGO_PWD: process.env.MONGO_PWD,
   MONGO_URL: process.env.MONGO_URL,
   MONGO_PORT: process.env.MONGO_PORT,
-  MONGO_DBNAME: process.env.MONGO_DBNAME
+  MONGO_DBNAME: process.env.MONGO_DBNAME,
+  BACKEND_URL: process.env.BACKEND_URL
 }

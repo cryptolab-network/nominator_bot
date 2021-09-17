@@ -16,24 +16,30 @@ export class ChainData {
     return targets;
   }
 
-  async queryNominatorInfo(address: string): Promise<INominatorInfo> {
+  async getActiveEra(): Promise<number> {
     const api = this._apiHandler.getApi();
-    let [balances, bonded, payee] = await Promise.all([
-      api.derive.balances.all(address),
-      api.query.staking.bonded(address),
-      api.query.staking.payee(address)
-    ]);
-    const controller = bonded.isNone ? '' : bonded.toString();
-    return {
-      address,
-      controller,
-      rewardDestination: payee.isStaked ? address : controller,
-      availableBalance: balances.freeBalance,
-      freeBalance: balances.freeBalance,
-      lockedBalance: balances.lockedBalance,
-      reservedBalance: balances.reservedBalance
-    }
+    const activeEra = await api.query.staking.activeEra();
+    return activeEra.unwrap().index.toNumber();
   }
+
+  // async queryNominatorInfo(address: string): Promise<INominatorInfo> {
+  //   const api = this._apiHandler.getApi();
+  //   let [balances, bonded, payee] = await Promise.all([
+  //     api.derive.balances.all(address),
+  //     api.query.staking.bonded(address),
+  //     api.query.staking.payee(address)
+  //   ]);
+  //   const controller = bonded.isNone ? '' : bonded.toString();
+  //   return {
+  //     address,
+  //     controller,
+  //     rewardDestination: payee.isStaked ? address : controller,
+  //     availableBalance: balances.freeBalance,
+  //     freeBalance: balances.freeBalance,
+  //     lockedBalance: balances.lockedBalance,
+  //     reservedBalance: balances.reservedBalance
+  //   }
+  // }
 }
 
 
