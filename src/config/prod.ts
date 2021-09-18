@@ -1,7 +1,8 @@
 export =  {
   CHAIN: process.env.CHAIN,
   TG_TOKEN: process.env.TG_TOKEN,
-  API_WSS: process.env.API_WSS,
+  API_WSS_KUSAMA: process.env.API_WSS_KUSAMA,
+  API_WSS_POLKADOT: process.env.API_WSS_POLKADOT,
   MONGO_USERNAME: process.env.MONGO_USERNAME,
   MONGO_PWD: process.env.MONGO_PWD,
   MONGO_URL: process.env.MONGO_URL,

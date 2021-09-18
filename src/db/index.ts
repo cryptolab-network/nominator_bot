@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { ChatSchema, NominatorSchema, NotificationSchema } from './models';
 import { IChat, ChatState, INominator, DbStatusCode, INotification, NotificationType } from '../interfaces';
-import { assert } from 'console';
 
 export class Db {
   private _chatModel: any;
@@ -79,7 +78,7 @@ export class Db {
         address,
         targets
       }
-      const nominator = await this._nominatorModel.findOne(data).exec();
+      const nominator = await this._nominatorModel.findOne({chatId, address}).exec();
       if (nominator) {
         return DbStatusCode.exist;
       }

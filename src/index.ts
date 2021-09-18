@@ -16,7 +16,7 @@ const main = async () => {
   const db = new Db();
   await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}`);
 
-  const apiHandler = await ApiHandler.create(keys.API_WSS);
+  const apiHandler = await ApiHandler.create(keys.API_WSS_KUSAMA, keys.API_WSS_POLKADOT);
   if (!apiHandler) {
     process.exit();
   }

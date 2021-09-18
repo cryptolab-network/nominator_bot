@@ -110,7 +110,7 @@ export interface IEventPayouts {
 export interface IEventsInfo {
   commissions: IEventCommissions[];
   slashes: IEventSlashes[];
-  inactives: number[];
+  inactive: number[];
   stalePayouts: IEventStalePayouts[];
   payouts: IEventPayouts[];
 }

@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { Db } from './db';
 import { ChatState, IChat, DbStatusCode } from './interfaces';
-import { verifyAddress } from './utils';
+import { verifyAddress, getApiChain } from './utils';
 import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccount, addNominatorOk, noNomiee, noNominators,
   removeAccount, removeKeyboard, removeNominatorOk, listKeyboard, listAccount, showNomintorInfo
 } from './message';
@@ -140,15 +140,17 @@ export class Telegram {
           } else {
             const nominator = await this._db.getNominator(chatId, address);
             // let nominatorInfo = await this._chainData.queryNominatorInfo(address);
+            const chain = getApiChain(address);
             let nominatorInfo = await apiGetInfoNominator({
               params: {
-                chain: 'KSM',
+                chain,
                 id: address
               }
             });
             // nominatorInfo.nomineeCount = nominator?.targets.length;
             if (nominator && nominatorInfo) {
-              await this._bot.sendMessage(chatId, showNomintorInfo(nominatorInfo));
+              console.log(nominatorInfo);
+              await this._bot.sendMessage(chatId, nominatorInfo.targets.join(' '));
             } else {
               await this._bot.sendMessage(chatId, tryAgainLater());
             }

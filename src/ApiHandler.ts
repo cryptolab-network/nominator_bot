@@ -1,28 +1,36 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
 export class ApiHandler {
-  private _api: ApiPromise;
-  private _endpoints: string;
-  constructor(api: ApiPromise, endpoints: string) {
-    this._api = api;
-    this._endpoints = endpoints;
+  private _apiKusama: ApiPromise;
+  private _apiPolkadot: ApiPromise;
+  private constructor(apiKusama: ApiPromise, apiPolkadot: ApiPromise) {
+    this._apiKusama = apiKusama;
+    this._apiPolkadot = apiPolkadot;
   }
 
-  static async create(endpoints: string): Promise<ApiHandler | null> {
+  static async create(endpointKusama: string, endpointPolkadot: string): Promise<ApiHandler | null> {
     try {
-      const api = await ApiPromise.create({
-        provider: new WsProvider(endpoints, 1000),
+      const apiKusama = await ApiPromise.create({
+        provider: new WsProvider(endpointKusama, 1000),
       });
-      await api.isReadyOrError;
-      return new ApiHandler(api, endpoints);
+      const apiPolkadot = await ApiPromise.create({
+        provider: new WsProvider(endpointPolkadot, 1000)
+      })
+      await apiKusama.isReadyOrError;
+      await apiPolkadot.isReadyOrError;
+      return new ApiHandler(apiKusama, apiPolkadot);
     } catch (err) {
       console.log(err);
       return null;
     }
   }
 
-  getApi(): ApiPromise {
-    return this._api;
+  getKusamaApi(): ApiPromise {
+    return this._apiKusama;
+  }
+
+  getPolkadotApi(): ApiPromise {
+    return this._apiPolkadot;
   }
 }
 

@@ -1,5 +1,4 @@
 import { Schema } from 'mongoose';
-import { NotificationType } from '../interfaces';
 
 export const ChatSchema = new Schema({
   id: Number,
@@ -23,6 +22,7 @@ export const NominatorSchema = new Schema({
 });
 
 export const ValidatorSchema = new Schema({
+  chain: String,
   stash: String,
   identity: {
     display: String,

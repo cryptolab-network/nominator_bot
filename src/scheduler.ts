@@ -6,6 +6,7 @@ import { apiGetNotificationEvents } from './AxiosHandler';
 import { IEventCommissions, NotificationType, IEventStalePayouts } from './interfaces';
 import TelegramBot from 'node-telegram-bot-api';
 import sha256 from 'crypto-js/sha256';
+import { getApiChain } from './utils';
 
 export class Scheduler {
   public role: JobRole;
@@ -28,27 +29,21 @@ export class Scheduler {
 
     switch(role) {
       case JobRole.bot: 
-        // check connection of nodes from telemetry server every 1 min.
         this._botJob = new CronJob('*/5 * * * *', async () => {
           if (!this._checkingBot) {
             this._checkingBot = true;
-            // await this.checkTelemetryStatus();
             await this.sendNotifications();
             this._checkingBot = false;
           }
         }, null, true, 'America/Los_Angeles', null, true);
         break;
       case JobRole.event:
-        // request chaindata every 10 mins.
         this._eventJob = new CronJob('*/10 * * * *', async () => {
           if (!this._collectingEvent) {
             this._collectingEvent = true;
             await Promise.all([
               this.pollingEvents()
-              // await this.updateValidators(),
-              // await this.collectNominations()
             ])
-            // await this.updateClientStatus();
             this._collectingEvent = false;
           }
         }, null, true, 'America/Los_Angeles', null, true);
@@ -75,7 +70,8 @@ export class Scheduler {
   async pollingEvents() {
     console.time('scheduler :: pollingEvents');
     // get current era
-    const currentEra = await this._chainData.getActiveEra();
+    const currentEraKusama = await this._chainData.getActiveEra('Kusama');
+    const currentEraPolkadot = await this._chainData.getActiveEra('Polkadot');
     // retrive all nominators
     const chats = await this._db.getAllChats();
     if (chats === null) {
@@ -85,23 +81,24 @@ export class Scheduler {
       const nominators = await this._db.getAllNominators(chat.id);
       nominators.forEach(async (nominator) => {
         // polling events
+        const chain = getApiChain(nominator);
         const events = await apiGetNotificationEvents({
           params: {
             id: nominator,
-            chain: 'KSM'
+            chain
           },
           query: {
-            from_era: currentEra - 1,
-            to_era: currentEra
+            from_era: (chain === 'Kusama') ? currentEraKusama - 1 : currentEraPolkadot - 1,
+            to_era: (chain === 'Kusama') ? currentEraKusama : currentEraPolkadot
           }
         });
         console.log(nominator);
         console.log(events);
         // insert received events into notification collection
-        const { commissions, slashes, inactives, stalePayouts, payouts } = events;
+        const { commissions, slashes, inactive, stalePayouts, payouts } = events;
         await this.insertCommissionEvent(chat.id, nominator, commissions);
         await this.insertSlashEvent(chat.id, nominator, slashes);
-        await this.insertInactiveEvent(chat.id, nominator, inactives);
+        await this.insertInactiveEvent(chat.id, nominator, inactive);
         await this.insertStalePayoutEvent(chat.id, nominator, stalePayouts);
         await this.insertPayoutEvent(chat.id, nominator, payouts);
       });
