@@ -1,5 +1,5 @@
 import { CronJob } from 'cron';
-import { IEventPayouts, IEventSlashes, JobRole } from './interfaces';
+import { IEventPayouts, IEventSlashes, INominatorDb, JobRole } from './interfaces';
 import { Db } from './db';
 import { ChainData } from './chaindata';
 import { apiGetNotificationEvents } from './AxiosHandler';
@@ -78,96 +78,153 @@ export class Scheduler {
       return;
     }
     chats.forEach(async (chat) => {
-      const nominators = await this._db.getAllNominators(chat.id);
-      nominators.forEach(async (nominator) => {
-        // polling events
-        const chain = getApiChain(nominator.address);
-        const events = await apiGetNotificationEvents({
-          params: {
-            id: nominator.address,
-            chain
-          },
-          query: {
-            from_era: (chain === 'Kusama') ? currentEraKusama - 1 : currentEraPolkadot - 1,
-            to_era: (chain === 'Kusama') ? currentEraKusama : currentEraPolkadot
+      if (chat.sendCommissions || chat.sendInactives || chat.sendPayouts || chat.sendSlashes || chat.sendStalePayouts) {
+        const nominators = await this._db.getAllNominators(chat.id);
+        nominators.forEach(async (nominator) => {
+          // polling events
+          const chain = getApiChain(nominator.address);
+          const events = await apiGetNotificationEvents({
+            params: {
+              id: nominator.address,
+              chain
+            },
+            query: {
+              from_era: (chain === 'Kusama') ? currentEraKusama - 1 : currentEraPolkadot - 1,
+              to_era: (chain === 'Kusama') ? currentEraKusama : currentEraPolkadot
+            }
+          });
+          console.log(nominator);
+          console.log(events);
+          // insert received events into notification collection
+          const { commissions, slashes, inactive, stalePayouts, payouts } = events;
+          // const commissions = [{
+          //   commissionFrom: 1,
+          //   commissionTo: 2.0,
+          //   address: 'GA1WBfVMBReXjWKGnXneC682ZZYustFoc8aTsqXv5fFvi2e',
+          //   era: 2733,
+          // }]
+
+          // const slashes = [{
+          //   era: 2733,
+          //   validator: 'GhS2L5H1ebHHRDwDMtMtcMyaJsJcncyHDmuUJwHAimifTbx',
+          //   total: 2.3
+          // }]
+
+          // const inactive = [2733, 2734];
+          // const stalePayouts = [{
+          //   address: 'D3bm5eAeiRezwZp4tWTX4sZN3u8nXy2Fo21U59smznYHu3F',
+          //   era: 2733,
+          //   unclaimedPayoutEras: [2600, 2700, 2732]
+          // }]
+          // const payouts = [{
+          //   era: 2733,
+          //   amount: 1233141234,
+          //   address: 'JBuHBvnqpyb1Qtm7173z4ET1BnmjTMcdDdo7WzbnSbGa4vZ',
+          // }]
+          if (chat.sendCommissions) {
+            await this.insertCommissionEvent(chat.id, nominator, commissions);
+          }
+
+          if (chat.sendInactives) {
+            await this.insertInactiveEvent(chat.id, nominator, inactive);
+          }
+
+          if (chat.sendPayouts) {
+            await this.insertPayoutEvent(chat.id, nominator, payouts);
+          }
+
+          if (chat.sendSlashes) {
+            await this.insertSlashEvent(chat.id, nominator, slashes);
+          }
+          
+          if (chat.sendStalePayouts) {
+            await this.insertStalePayoutEvent(chat.id, nominator, stalePayouts);
           }
         });
-        console.log(nominator);
-        console.log(events);
-        // insert received events into notification collection
-        const { commissions, slashes, inactive, stalePayouts, payouts } = events;
-        await this.insertCommissionEvent(chat.id, nominator.address, commissions);
-        await this.insertSlashEvent(chat.id, nominator.address, slashes);
-        await this.insertInactiveEvent(chat.id, nominator.address, inactive);
-        await this.insertStalePayoutEvent(chat.id, nominator.address, stalePayouts);
-        await this.insertPayoutEvent(chat.id, nominator.address, payouts);
-      });
+      }
     });
     console.timeEnd('scheduler :: pollingEvents');
   }
 
-  async insertCommissionEvent(chatId: number, nominator: string, events: IEventCommissions[]) {
+  async insertCommissionEvent(chatId: number, nominator: INominatorDb, events: IEventCommissions[]) {
     events.forEach(async (e) => {
       if (e.commissionFrom !== 0) {
-        const eventHash = sha256(`${chatId}.${nominator}.${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`);
+        const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`);
+        const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+        // const chain = getApiChain(nominator.address);
+        // const identity = await this._chainData.queryIdentity(nominator.address, chain);
+        // console.log(identity);
         await this._db.addNotification({
           type: NotificationType.event,
           eventHash: eventHash.toString(),
           chatId: chatId,
-          message: `Commission Event: ${nominator} => ${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`,
+          message: `〽️ Commission Event to ${account}: the nominee ${e.address} change its commission from ${e.commissionFrom}% to ${e.commissionTo}%`,
           sent: false
         });
       }
     })
   }
 
-  async insertSlashEvent(chatId: number, nominator: string, events: IEventSlashes[]) {
+  async insertSlashEvent(chatId: number, nominator: INominatorDb, events: IEventSlashes[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator}.${e.era}.${e.validator}.${e.total}`);
+      const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.validator}.${e.total}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      // const chain = getApiChain(nominator.address);
+      // const identity = await this._chainData.queryIdentity(nominator.address, chain);
+      // console.log(identity);
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `Slashes Event: ${nominator} => ${e.era}.${e.validator}.${e.total}`,
+        message: `💸 Slashes Event to ${account}: the nominee ${e.validator} gets slashed ${e.total} at era ${e.era}.`,
         sent: false
       });
     });
   }
 
-  async insertInactiveEvent(chatId: number, nominator: string, events: number[]) {
+  async insertInactiveEvent(chatId: number, nominator: INominatorDb, events: number[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator}.${e}`);
+      const eventHash = sha256(`${chatId}.${nominator.address}.${e}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `Inactive Event: ${nominator} => ${e}`,
+        message: `⏸️ Inactive Event to ${account}: all nominees are inactive.`,
         sent: false
       });
     })
   }
 
-  async insertStalePayoutEvent(chatId: number, nominator: string, events: IEventStalePayouts[]) {
+  async insertStalePayoutEvent(chatId: number, nominator: INominatorDb, events: IEventStalePayouts[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator}.${e.era}.${e.address}.${e.unclaimedPayoutEras.join()}`);
+      const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}.${e.unclaimedPayoutEras.join()}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      // const chain = getApiChain(nominator.address);
+      // const identity = await this._chainData.queryIdentity(nominator.address, chain);
+      // console.log(identity);
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `StalePayout Event: ${nominator} => ${e.address}: ${e.unclaimedPayoutEras.join(' ')}`,
+        message: `💤 Stale Payout Event to ${account}: the nominee ${e.address} has unclaimed payouts at ${e.unclaimedPayoutEras.join(' ')} era`,
         sent: false
       })
     });
   }
 
-  async insertPayoutEvent(chatId: number, nominator: string, events: IEventPayouts[]) {
+  async insertPayoutEvent(chatId: number, nominator: INominatorDb, events: IEventPayouts[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator}.${e.era}.${e.address}${e.amount}`);
+      const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}${e.amount}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      // const chain = getApiChain(nominator.address);
+      // const identity = await this._chainData.queryIdentity(nominator.address, chain);
+      // console.log(identity);
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `Payout event: ${nominator} => ${e.era} ${e.address} ${e.amount}`,
+        message: `💰 Payout Event to ${account}: received ${e.amount}`,
         sent: false
       })
     });

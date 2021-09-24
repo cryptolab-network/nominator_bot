@@ -64,6 +64,21 @@ export class ChainData {
     }
   }
 
+  // todo: fix this
+  async queryIdentity(address: string, chain: string) {
+    let api: ApiPromise;
+    if (chain === 'KSM') {
+      api = this._apiHandler.getKusamaApi();
+    } else if (chain === 'DOT') {
+      api = this._apiHandler.getPolkadotApi();
+    } else {
+      return null;
+    }
+    const identity = await api.query.identity.identityOf(address);
+    console.log(identity);
+    return identity.value.toString();
+  }
+
   // async queryNominatorInfo(address: string): Promise<INominatorInfo> {
   //   const api = this._apiHandler.getApi();
   //   let [balances, bonded, payee] = await Promise.all([
