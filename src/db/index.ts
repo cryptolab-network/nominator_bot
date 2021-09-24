@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { ChatSchema, NominatorSchema, NotificationSchema } from './models';
-import { IChat, ChatState, INominator, DbStatusCode, INotification, NotificationType } from '../interfaces';
+import { IChat, ChatState, INominatorDb, DbStatusCode, INotification, NotificationType, SetEventCallback } from '../interfaces';
 
 export class Db {
   private _chatModel: any;
@@ -33,7 +33,12 @@ export class Db {
   }
 
   async updateChat(data: IChat): Promise<boolean> {
-    const chat = await this._chatModel.findOne({data}).exec();
+    const chat = await this._chatModel.findOne({
+      id: data.id,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      username: data.username,
+    }).exec();
 
     if (!chat) {
       const chat: any = new this._chatModel(data);
@@ -46,6 +51,46 @@ export class Db {
   async updateChatStatus(chatId: number, state: ChatState): Promise<DbStatusCode> {
     try {
       await this._chatModel.findOneAndUpdate({id: chatId}, { $set: { state }});
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
+
+  async updateChatStatusAndData(chatId: number, state: ChatState, address: string): Promise<DbStatusCode> {
+    try {
+      await this._chatModel.findOneAndUpdate({id: chatId}, { $set: { state, state_data: { setdisplaynameAddress: address } }});
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
+
+  async toggleEvents(chat: IChat, data: string): Promise<DbStatusCode> {
+    try {
+      let set;
+      switch(data) {
+        case SetEventCallback.toggleCommission:
+          set = { $set: { sendCommissions: !chat.sendCommissions }}
+        break;
+        case SetEventCallback.toggleInactive:
+          set = { $set: { sendInactives: !chat.sendInactives}}
+        break;
+        case SetEventCallback.togglePayout:
+          set = { $set: { sendPayouts: !chat.sendPayouts}}
+        break;
+        case SetEventCallback.toggleSlash:
+          set = { $set: { sendSlashes: !chat.sendSlashes}}
+        break;
+        case SetEventCallback.toggleStalePayout:
+          set = { $set: { sendStalePayouts: !chat.sendStalePayouts}}
+        break;
+        default:
+          set = {}
+      }
+      await this._chatModel.findOneAndUpdate({id: chat.id}, set);
       return DbStatusCode.success;
     } catch (err) {
       console.log(err);
@@ -76,7 +121,8 @@ export class Db {
       const data = {
         chatId,
         address,
-        targets
+        targets,
+        displayname: ''
       }
       const nominator = await this._nominatorModel.findOne({chatId, address}).exec();
       if (nominator) {
@@ -90,20 +136,29 @@ export class Db {
     }
   }
 
-  async getAllNominators(chatId: number): Promise<string[]> {
+  async getAllNominators(chatId: number): Promise<INominatorDb[]> {
     try {
       const nominators = await this._nominatorModel.find({chatId}).exec();
-      const addresses = nominators.map((nominator: any) => nominator.address);
-      return addresses;
+      return nominators;
     } catch (err) {
       console.log(err);
       return [];
     }
   }
 
-  async getNominator(chatId: number, address: string): Promise<INominator | null> {
+  async getNominator(chatId: number, address: string): Promise<INominatorDb | null> {
     try {
       const nominator = await this._nominatorModel.findOne({chatId, address}).exec();
+      return nominator;
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
+  }
+
+  async getNominatorByDisplayName(chatId: number, displayname: string): Promise<INominatorDb | null> {
+    try {
+      const nominator = await this._nominatorModel.findOne({chatId, displayname}).exec();
       return nominator;
     } catch (err) {
       console.log(err);
@@ -114,6 +169,16 @@ export class Db {
   async removeNominator(chatId: number, address: string): Promise<DbStatusCode> {
     try {
       await this._nominatorModel.findOneAndRemove({chatId, address}).exec();
+      return DbStatusCode.success;
+    } catch (err) {
+      console.log(err);
+      return DbStatusCode.error;
+    }
+  }
+
+  async updateNominatorDisplayname(chatId: number, address: string, displayname: string): Promise<DbStatusCode> {
+    try {
+      await this._nominatorModel.findOneAndUpdate({chatId: chatId, address: address}, { $set: { displayname: displayname }});
       return DbStatusCode.success;
     } catch (err) {
       console.log(err);

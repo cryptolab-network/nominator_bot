@@ -1,24 +1,24 @@
 import { ApiPromise } from '@polkadot/api';
 import { ApiHandler } from './ApiHandler';
-import { INominatorInfo } from './interfaces';
+import { INominatorChainData } from './interfaces';
 export class ChainData {
   private _apiHandler: ApiHandler;
   constructor(apiHandler: ApiHandler) {
     this._apiHandler = apiHandler;
   }
 
-  async queryStakingNominators(address: string): Promise<string[]> {
+  async queryStakingNominators(address: string): Promise<string[] | null> {
     let api: ApiPromise;
     if (address.match(/1+/)?.index === 0) {
       api = this._apiHandler.getPolkadotApi();
     } else if (address.match(/[C-Z].+/)?.index === 0) {
       api = this._apiHandler.getKusamaApi();
     } else {
-      return [];
+      return null;
     }
     const nomination: any = (await api.query.staking.nominators(address)).toJSON();
     if (!nomination) {
-      return [];
+      return null;
     }
     const targets = nomination['targets'];
     return targets;
@@ -35,6 +35,33 @@ export class ChainData {
     }
     const activeEra = await api.query.staking.activeEra();
     return activeEra.unwrap().index.toNumber();
+  }
+
+  async queryStakingAccount(address: string, chain: string): Promise<INominatorChainData | null> {
+    let api: ApiPromise;
+    if (chain === 'KSM') {
+      api = this._apiHandler.getKusamaApi();
+    } else if (chain === 'DOT') {
+      api = this._apiHandler.getPolkadotApi();
+    } else {
+      return null;
+    }
+    const data = await api.derive.staking.account(address);
+    const rewardDestination = data.rewardDestination.isStaked
+    ? 'Staked'
+    : data.rewardDestination.isStash
+    ? 'Stash'
+    : data.rewardDestination.isController
+    ? 'Controller'
+    : data.rewardDestination.asAccount.toString()
+  
+    return {
+      address: data.accountId.toHuman(),
+      bonded: (data.stakingLedger.total.toHuman()?.toString()),
+      active: data.stakingLedger.active.toHuman()?.toString(),
+      rewardDestination: rewardDestination,
+      totalNominees: data.nominators.length
+    }
   }
 
   // async queryNominatorInfo(address: string): Promise<INominatorInfo> {

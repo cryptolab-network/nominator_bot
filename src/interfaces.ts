@@ -6,6 +6,14 @@ export enum ChatState {
   add = 'add',
   remove = 'remove',
   list = 'list',
+  setDisplayName = 'setdisplayname',
+  setDisplayNameContinue = 'setdisplaynamecontinue',
+  setEvents = 'setevents',
+}
+
+export enum Commands {
+  setdisplayname = 'Setup a display name for added nominator.',
+  setevents = 'Turn on/off event notifications'
 }
 
 export enum DbStatusCode {
@@ -30,6 +38,15 @@ export enum EventType {
 export enum NotificationType {
   event = 'event'
 }
+
+export enum SetEventCallback {
+  toggleCommission = 'toggleCommission',
+  toggleSlash = 'toggleSlash',
+  toggleInactive = 'toggleInactive',
+  toggleStalePayout = 'toggleStalePayout',
+  togglePayout = 'togglePayout',
+  done = 'done'
+}
 export interface IChat {
   id: number;
   first_name: string;
@@ -37,24 +54,30 @@ export interface IChat {
   username: string;
   type: string;
   state: ChatState;
+  state_data: {
+    setdisplaynameAddress: string;
+  },
+  sendCommissions: boolean,
+  sendSlashes: boolean,
+  sendInactives: boolean,
+  sendStalePayouts: boolean,
+  sendPayouts: boolean,
 }
 
-// export interface INominator {
-//   chatId: number;
-//   address: string;
-//   targets: string[];
-// }
+export interface INominatorDb {
+  chatId: number,
+  address: string,
+  displayname: string,
+  targets: [string]
+}
 
-// export interface INominatorInfo {
-//   address: string;
-//   nomineeCount?: number;
-//   controller: string;
-//   rewardDestination: string;
-//   availableBalance: Balance;
-//   freeBalance: Balance;
-//   lockedBalance: Balance;
-//   reservedBalance: Balance;
-// }
+export interface INominatorChainData {
+  address: string,
+  bonded: string | undefined,
+  active: string | undefined,
+  rewardDestination: string,
+  totalNominees: number
+}
 
 export interface INominatorInfo {
   accountId: string;

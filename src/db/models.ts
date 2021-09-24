@@ -6,7 +6,15 @@ export const ChatSchema = new Schema({
   last_name: String,
   username: String,
   type: String,
-  state: String
+  state: String,
+  state_data: {
+    setdisplaynameAddress: String,
+  },
+  sendCommissions: Boolean,
+  sendSlashes: Boolean,
+  sendInactives: Boolean,
+  sendStalePayouts: Boolean,
+  sendPayouts: Boolean,
 }, {
   timestamps: {},
   typeKey: '$type',
@@ -15,6 +23,7 @@ export const ChatSchema = new Schema({
 export const NominatorSchema = new Schema({
   chatId: Number,
   address: String,
+  displayname: String,
   targets: [String]
 }, {
   timestamps: {},

@@ -1,14 +1,18 @@
 import dedent from 'dedent';
-import { ReplyKeyboardMarkup } from 'node-telegram-bot-api';
-import { INominatorInfo } from './interfaces';
+import { ReplyKeyboardMarkup, InlineKeyboardMarkup } from 'node-telegram-bot-api';
+import { INominatorInfo, SetEventCallback, INominatorDb, IChat, INominatorChainData } from './interfaces';
 
 export const help = (): string => {
   return dedent(`
     🙌 Welcome. This bot helps you to monitor the status of the validators you nominated.
+    Polkadot (DOT) and Kusama (KSM) are both supported.
 
-    /add - 🆕 add an address to your watchlist.
-    /remove - ✂️ remove an address from your watchlist.
-    /list - 
+    /add - 🆕 add a nominator to your watchlist.
+    /remove - ✂️ remove a nominator from your watchlist.
+    /list - 📖 list added nominators.
+    /setdisplayname - ⚙️ change nominator display name.
+    /setevents - 🔕 toggle event notifications.
+    /web - 🧪 visit the CryptoLab website.
   `);
 }
 
@@ -30,9 +34,15 @@ export const invalidAccount = (): string => {
   `);
 }
 
+export const accountNotFound = (): string => {
+  return dedent(`
+    The account was not found. Please input again.
+  `);
+}
+
 export const addNominatorOk = (): string => {
   return dedent(`
-    🎉 Your nominator account has been added successfully.
+    🎉 Your nominator account has been added successfully. check out /list
   `);
 }
 
@@ -42,7 +52,7 @@ export const existNominatorAccount = (): string => {
   `);
 }
 
-export const noNomiee = (): string => {
+export const noNominee = (): string => {
   return dedent(`
     Can't retrive any nominee from on-chain data. Please check your nominator account and input again.
   `);
@@ -60,8 +70,14 @@ export const removeAccount = (): string => {
   `);
 }
 
-export const removeKeyboard = (addresses: string[]): ReplyKeyboardMarkup => {
-  const buttons = addresses.map(address => [{text: address}]);
+export const removeKeyboard = (nominators: INominatorDb[]): ReplyKeyboardMarkup => {
+  const buttons = nominators.map((n) => {
+    if (n.displayname !== '') {
+      return [{text: n.displayname}];
+    } else {
+      return [{text: n.address}];
+    }
+  })
   const replyKeyboardMarkup = {
     keyboard: buttons,
     resize_keyboard: true,
@@ -72,18 +88,25 @@ export const removeKeyboard = (addresses: string[]): ReplyKeyboardMarkup => {
 
 export const removeNominatorOk = (): string => {
   return dedent(`
-    🎉 Your nominator account has been removed ✂️ successfully.
+    🎉 Your nominator account has been removed ✂️ successfully. check out /list
   `);
 }
 
 export const listAccount = (): string => {
   return dedent(`
-    Select an account to show its info
+    Select an account
   `);
 }
 
-export const listKeyboard = (addresses: string[]): ReplyKeyboardMarkup => {
-  const buttons = addresses.map(address => [{text: address}]);
+export const listKeyboard = (nominators: INominatorDb[]): ReplyKeyboardMarkup => {
+  const buttons = nominators.map((n) => {
+    console.log(n);
+    if (n.displayname !== '') {
+      return [{text: n.displayname}];
+    } else {
+      return [{text: n.address}];
+    }
+  })
   const replyKeyboardMarkup = {
     keyboard: buttons,
     resize_keyboard: true,
@@ -94,4 +117,87 @@ export const listKeyboard = (addresses: string[]): ReplyKeyboardMarkup => {
 
 export const showNomintorInfo = (info: INominatorInfo): string => {
   return JSON.stringify(info, undefined, 1);
+}
+
+export const showNomintorChainInfo = (info: INominatorChainData): string => {
+  return dedent(`
+  🗳️ Account: ${info.address}
+  💰 Bonded amount: ${info.bonded}
+  ✨ Active amount: ${info.bonded}
+  🏦 Reward destination: ${info.rewardDestination}
+  🤖 Total nominees: ${info.totalNominees}
+  `);
+}
+
+export const setDisplayName = (address: string): string => {
+  return dedent(`
+    OK. Input the new display name for the nominator ${address}.
+  `);
+}
+
+export const successDisplayName = (): string => {
+  return dedent(`
+    Success! Display name updated. /help
+  `);
+}
+
+export const toggleEvents = (): string => {
+  return dedent(`
+    Select an event.
+  `);
+}
+
+export const toggleEventsDone = (): string => {
+  return dedent(`
+    OK.
+  `);
+}
+
+export const setEventsKeyboard = (chat: IChat): InlineKeyboardMarkup => {
+  let buttons = [];
+  if (chat.sendCommissions) {
+    buttons.push([{text: `🔔 commission change event`, callback_data: SetEventCallback.toggleCommission}]);
+  } else {
+    buttons.push([{text: `🔕 commission change event`, callback_data: SetEventCallback.toggleCommission}]);
+  }
+
+  if (chat.sendInactives) {
+    buttons.push([{text: `🔔 all validators inactive event`, callback_data: SetEventCallback.toggleInactive}]);
+  } else {
+    buttons.push([{text: `🔕 all validators inactive event`, callback_data: SetEventCallback.toggleInactive}]);
+  }
+
+  if (chat.sendPayouts) {
+    buttons.push([{text: `🔔 payout event`, callback_data: SetEventCallback.togglePayout}]);
+  } else {
+    buttons.push([{text: `🔕 payout event`, callback_data: SetEventCallback.togglePayout}]);
+  }
+
+  if (chat.sendSlashes) {
+    buttons.push([{text: `🔔 slash event`, callback_data: SetEventCallback.toggleSlash}]);
+  } else {
+    buttons.push([{text: `🔕 slash event`, callback_data: SetEventCallback.toggleSlash}]);
+  }
+
+  if (chat.sendStalePayouts) {
+    buttons.push([{text: `🔔 stale payout event`, callback_data: SetEventCallback.toggleStalePayout}]);
+  } else {
+    buttons.push([{text: `🔕 stale payout event`, callback_data: SetEventCallback.toggleStalePayout}]);
+  }
+
+  buttons.push([{text: 'done', callback_data: SetEventCallback.done}]);
+
+  const inlineKeyboardMarkup = {
+    inline_keyboard: buttons
+  }
+  return inlineKeyboardMarkup;
+}
+
+export const visitCryptoLab = (): string => {
+  return dedent(`
+    CryptoLab is making life way easier for crypto holders. 
+    We help you earn staking yield without taking custody of your assets. 
+    Stake once, CryptoLab will take care of the rest for you.
+    Visit https://www.cryptolab.network for more information.
+  `);
 }

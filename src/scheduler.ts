@@ -81,10 +81,10 @@ export class Scheduler {
       const nominators = await this._db.getAllNominators(chat.id);
       nominators.forEach(async (nominator) => {
         // polling events
-        const chain = getApiChain(nominator);
+        const chain = getApiChain(nominator.address);
         const events = await apiGetNotificationEvents({
           params: {
-            id: nominator,
+            id: nominator.address,
             chain
           },
           query: {
@@ -96,11 +96,11 @@ export class Scheduler {
         console.log(events);
         // insert received events into notification collection
         const { commissions, slashes, inactive, stalePayouts, payouts } = events;
-        await this.insertCommissionEvent(chat.id, nominator, commissions);
-        await this.insertSlashEvent(chat.id, nominator, slashes);
-        await this.insertInactiveEvent(chat.id, nominator, inactive);
-        await this.insertStalePayoutEvent(chat.id, nominator, stalePayouts);
-        await this.insertPayoutEvent(chat.id, nominator, payouts);
+        await this.insertCommissionEvent(chat.id, nominator.address, commissions);
+        await this.insertSlashEvent(chat.id, nominator.address, slashes);
+        await this.insertInactiveEvent(chat.id, nominator.address, inactive);
+        await this.insertStalePayoutEvent(chat.id, nominator.address, stalePayouts);
+        await this.insertPayoutEvent(chat.id, nominator.address, payouts);
       });
     });
     console.timeEnd('scheduler :: pollingEvents');
@@ -108,14 +108,16 @@ export class Scheduler {
 
   async insertCommissionEvent(chatId: number, nominator: string, events: IEventCommissions[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator}.${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`);
-      await this._db.addNotification({
-        type: NotificationType.event,
-        eventHash: eventHash.toString(),
-        chatId: chatId,
-        message: `Commission Event: ${nominator} => ${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`,
-        sent: false
-      });
+      if (e.commissionFrom !== 0) {
+        const eventHash = sha256(`${chatId}.${nominator}.${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`);
+        await this._db.addNotification({
+          type: NotificationType.event,
+          eventHash: eventHash.toString(),
+          chatId: chatId,
+          message: `Commission Event: ${nominator} => ${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`,
+          sent: false
+        });
+      }
     })
   }
 

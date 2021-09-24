@@ -16,7 +16,7 @@ export const verifyAddress = (address: string): boolean => {
     }
     return false;
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     return false;
   }
 }
