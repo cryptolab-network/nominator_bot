@@ -13,11 +13,11 @@ export class Scheduler {
   private _db: Db;
   private _chainData: ChainData;
   private _botJob: CronJob | null;
-  private _telegramBot: TelegramBot
+  private _telegramBot: TelegramBot | undefined;
   private _checkingBot: boolean;
   private _eventJob: CronJob | null;
   private _collectingEvent: boolean;
-  constructor (role: JobRole, db: Db, chainData: ChainData, telegramBot: TelegramBot) {
+  constructor (role: JobRole, db: Db, chainData: ChainData, telegramBot?: TelegramBot) {
     this.role = role;
     this._db = db;
     this._chainData = chainData;
@@ -89,8 +89,8 @@ export class Scheduler {
               chain
             },
             query: {
-              from_era: (chain === 'Kusama') ? currentEraKusama - 1 : currentEraPolkadot - 1,
-              to_era: (chain === 'Kusama') ? currentEraKusama : currentEraPolkadot
+              from_era: (chain === 'KSM') ? currentEraKusama - 1 : currentEraPolkadot - 1,
+              to_era: (chain === 'KSM') ? currentEraKusama : currentEraPolkadot
             }
           });
           console.log(nominator);
@@ -235,7 +235,7 @@ export class Scheduler {
     const unsent = await this._db.getUnsentNotifications();
     if (unsent !== null) {
       for (let n of unsent) {
-        await this._telegramBot.sendMessage(n.chatId.valueOf(), n.message.toString());
+        await this._telegramBot?.sendMessage(n.chatId.valueOf(), n.message.toString());
         if (n._id) {
           await this._db.updateNotificationToSent(n._id.toString());
         }
