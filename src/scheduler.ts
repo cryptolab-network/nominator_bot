@@ -89,11 +89,14 @@ export class Scheduler {
               chain
             },
             query: {
-              from_era: (chain === 'KSM') ? currentEraKusama - 1 : currentEraPolkadot - 1,
+              from_era: (chain === 'KSM') ? currentEraKusama - 32 : currentEraPolkadot - 8,
               to_era: (chain === 'KSM') ? currentEraKusama : currentEraPolkadot
             }
           });
           console.log(nominator);
+          console.log(`chain: ${chain}`);
+          console.log(`from_era: ${(chain === 'KSM') ? currentEraKusama - 32 : currentEraPolkadot - 8}`);
+          console.log(`to_era: ${(chain === 'KSM') ? currentEraKusama : currentEraPolkadot}`);
           console.log(events);
           // insert received events into notification collection
           const { commissions, slashes, inactive, stalePayouts, payouts } = events;
@@ -169,14 +172,13 @@ export class Scheduler {
     events.forEach(async (e) => {
       const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.validator}.${e.total}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
-      // const chain = getApiChain(nominator.address);
-      // const identity = await this._chainData.queryIdentity(nominator.address, chain);
-      // console.log(identity);
+      const chain = getApiChain(nominator.address);
+      const decimal = (chain === 'KSM') ? 12 : 10;
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💸 Slashes Event to ${account}: the nominee ${e.validator} gets slashed ${e.total} at era ${e.era}.`,
+        message: `💸 Slashes Event to ${account}: the nominee ${e.validator} gets slashed ${e.total.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain} at era ${e.era}.`,
         sent: false
       });
     });
@@ -217,14 +219,13 @@ export class Scheduler {
     events.forEach(async (e) => {
       const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}${e.amount}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
-      // const chain = getApiChain(nominator.address);
-      // const identity = await this._chainData.queryIdentity(nominator.address, chain);
-      // console.log(identity);
+      const chain = getApiChain(nominator.address);
+      const decimal = (chain === 'KSM') ? 12 : 10;
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💰 Payout Event to ${account}: received ${e.amount}`,
+        message: `💰 Payout Event to ${account}: received ${e.amount.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain}`,
         sent: false
       })
     });
