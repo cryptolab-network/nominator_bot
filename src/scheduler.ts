@@ -89,15 +89,15 @@ export class Scheduler {
               chain
             },
             query: {
-              from_era: (chain === 'KSM') ? currentEraKusama - 32 : currentEraPolkadot - 8,
+              from_era: (chain === 'KSM') ? currentEraKusama - 1 : currentEraPolkadot - 0,
               to_era: (chain === 'KSM') ? currentEraKusama : currentEraPolkadot
             }
           });
-          console.log(nominator);
-          console.log(`chain: ${chain}`);
-          console.log(`from_era: ${(chain === 'KSM') ? currentEraKusama - 32 : currentEraPolkadot - 8}`);
-          console.log(`to_era: ${(chain === 'KSM') ? currentEraKusama : currentEraPolkadot}`);
-          console.log(events);
+          // console.log(nominator);
+          // console.log(`chain: ${chain}`);
+          // console.log(`from_era: ${(chain === 'KSM') ? currentEraKusama - 32 : currentEraPolkadot - 8}`);
+          // console.log(`to_era: ${(chain === 'KSM') ? currentEraKusama : currentEraPolkadot}`);
+          // console.log(events);
           // insert received events into notification collection
           const { commissions, slashes, inactive, stalePayouts, payouts } = events;
           // const commissions = [{
@@ -225,7 +225,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💰 Payout Event to ${account}: received ${e.amount.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain}`,
+        message: `💰 Payout Event to ${account}: received ${e.amount.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain} at era ${e.era}`,
         sent: false
       })
     });
