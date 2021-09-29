@@ -15,6 +15,9 @@ export const ChatSchema = new Schema({
   sendInactives: Boolean,
   sendStalePayouts: Boolean,
   sendPayouts: Boolean,
+  sendKicks: Boolean,
+  sendChills: Boolean,
+  sendOverSubscribes: Boolean,
 }, {
   timestamps: {},
   typeKey: '$type',

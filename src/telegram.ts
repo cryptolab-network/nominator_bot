@@ -37,6 +37,9 @@ export class Telegram {
         sendInactives: true,
         sendStalePayouts: true,
         sendPayouts: true,
+        sendKicks: true,
+        sendChills: true,
+        sendOverSubscribes: true,
       }
       await this._db.updateChat(chat);
       await this._bot.sendMessage(msg.chat.id, help());

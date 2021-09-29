@@ -41,8 +41,9 @@ export class Db {
     }).exec();
 
     if (!chat) {
-      const chat: any = new this._chatModel(data);
-      return chat.save();
+      await this._chatModel.create(data);
+      // const chat: any = new this._chatModel(data);
+      return true;
     } else {
       return true;
     }
@@ -87,7 +88,16 @@ export class Db {
         case SetEventCallback.toggleStalePayout:
           set = { $set: { sendStalePayouts: !chat.sendStalePayouts}}
         break;
-        default:
+        case SetEventCallback.toggleKick:
+          set = { $set: { sendKicks: !chat.sendKicks }}
+        break;
+        case SetEventCallback.toggleChill:
+          set = { $set: { sendChills: !chat.sendChills }}
+        break;
+        case SetEventCallback.toggleOverSubscribe:
+          set = { $set: { sendOverSubscribes: !chat.sendOverSubscribes}}
+        break;
+        default: 
           set = {}
       }
       await this._chatModel.findOneAndUpdate({id: chat.id}, set);

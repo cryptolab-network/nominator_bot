@@ -185,6 +185,24 @@ export const setEventsKeyboard = (chat: IChat): InlineKeyboardMarkup => {
     buttons.push([{text: `🔕 stale payout event`, callback_data: SetEventCallback.toggleStalePayout}]);
   }
 
+  if (chat.sendKicks) {
+    buttons.push([{text: `🔔 kick event`, callback_data: SetEventCallback.toggleKick}]);
+  } else {
+    buttons.push([{text: `🔕 kick event`, callback_data: SetEventCallback.toggleKick}]);
+  }
+
+  if (chat.sendChills) {
+    buttons.push([{text: `🔔 chill event`, callback_data: SetEventCallback.toggleChill}]);
+  } else {
+    buttons.push([{text: `🔕 chill event`, callback_data: SetEventCallback.toggleChill}]);
+  }
+
+  if (chat.sendOverSubscribes) {
+    buttons.push([{text: `🔔 oversubscribe event`, callback_data: SetEventCallback.toggleOverSubscribe}]);
+  } else {
+    buttons.push([{text: `🔕 oversubscribe event`, callback_data: SetEventCallback.toggleOverSubscribe}]);
+  }
+
   buttons.push([{text: 'done', callback_data: SetEventCallback.done}]);
 
   const inlineKeyboardMarkup = {

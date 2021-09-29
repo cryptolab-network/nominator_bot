@@ -1,5 +1,5 @@
 import { CronJob } from 'cron';
-import { IEventPayouts, IEventSlashes, INominatorDb, JobRole } from './interfaces';
+import { IChills, IEventPayouts, IEventSlashes, IKicks, INominatorDb, IOverSubscribes, JobRole } from './interfaces';
 import { Db } from './db';
 import { ChainData } from './chaindata';
 import { apiGetNotificationEvents } from './AxiosHandler';
@@ -78,7 +78,7 @@ export class Scheduler {
       return;
     }
     chats.forEach(async (chat) => {
-      if (chat.sendCommissions || chat.sendInactives || chat.sendPayouts || chat.sendSlashes || chat.sendStalePayouts) {
+      if (chat.sendCommissions || chat.sendInactives || chat.sendPayouts || chat.sendSlashes || chat.sendStalePayouts || chat.sendKicks || chat.sendChills || chat.sendOverSubscribes) {
         const nominators = await this._db.getAllNominators(chat.id);
         nominators.forEach(async (nominator) => {
           // polling events
@@ -99,7 +99,7 @@ export class Scheduler {
           // console.log(`to_era: ${(chain === 'KSM') ? currentEraKusama : currentEraPolkadot}`);
           // console.log(events);
           // insert received events into notification collection
-          const { commissions, slashes, inactive, stalePayouts, payouts } = events;
+          const { commissions, slashes, inactive, stalePayouts, payouts, kicks, chills, overSubscribes } = events;
           // const commissions = [{
           //   commissionFrom: 1,
           //   commissionTo: 2.0,
@@ -124,24 +124,36 @@ export class Scheduler {
           //   amount: 1233141234,
           //   address: 'JBuHBvnqpyb1Qtm7173z4ET1BnmjTMcdDdo7WzbnSbGa4vZ',
           // }]
-          if (chat.sendCommissions) {
+          if (chat.sendCommissions && commissions) {
             await this.insertCommissionEvent(chat.id, nominator, commissions);
           }
 
-          if (chat.sendInactives) {
+          if (chat.sendInactives && inactive) {
             await this.insertInactiveEvent(chat.id, nominator, inactive);
           }
 
-          if (chat.sendPayouts) {
-            await this.insertPayoutEvent(chat.id, nominator, payouts);
+          if (chat.sendPayouts && payouts) {
+            await this.insertPayoutEvent(chat.id, nominator, payouts, chain);
           }
 
-          if (chat.sendSlashes) {
-            await this.insertSlashEvent(chat.id, nominator, slashes);
+          if (chat.sendSlashes && slashes) {
+            await this.insertSlashEvent(chat.id, nominator, slashes, chain);
           }
           
-          if (chat.sendStalePayouts) {
+          if (chat.sendStalePayouts && stalePayouts) {
             await this.insertStalePayoutEvent(chat.id, nominator, stalePayouts);
+          }
+
+          if (chat.sendKicks && kicks) {
+            await this.insertKickEvent(chat.id, nominator, kicks);
+          }
+
+          if (chat.sendChills && chills) {
+            await this.insertChillEvent(chat.id, nominator, chills);
+          }
+
+          if (chat.sendOverSubscribes && overSubscribes) {
+            await this.insertOverSubscribeEvent(chat.id, nominator, overSubscribes, chain);
           }
         });
       }
@@ -152,7 +164,7 @@ export class Scheduler {
   async insertCommissionEvent(chatId: number, nominator: INominatorDb, events: IEventCommissions[]) {
     events.forEach(async (e) => {
       if (e.commissionFrom !== 0) {
-        const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`);
+        const eventHash = sha256(`Commission.${chatId}.${nominator.address}.${e.era}.${e.address}.${e.commissionFrom}.${e.commissionTo}`);
         const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
         // const chain = getApiChain(nominator.address);
         // const identity = await this._chainData.queryIdentity(nominator.address, chain);
@@ -168,11 +180,10 @@ export class Scheduler {
     })
   }
 
-  async insertSlashEvent(chatId: number, nominator: INominatorDb, events: IEventSlashes[]) {
+  async insertSlashEvent(chatId: number, nominator: INominatorDb, events: IEventSlashes[], chain: string) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.validator}.${e.total}`);
+      const eventHash = sha256(`Slash.${chatId}.${nominator.address}.${e.era}.${e.validator}.${e.total}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
-      const chain = getApiChain(nominator.address);
       const decimal = (chain === 'KSM') ? 12 : 10;
       await this._db.addNotification({
         type: NotificationType.event,
@@ -186,7 +197,7 @@ export class Scheduler {
 
   async insertInactiveEvent(chatId: number, nominator: INominatorDb, events: number[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator.address}.${e}`);
+      const eventHash = sha256(`Inactive.${chatId}.${nominator.address}.${e}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
       await this._db.addNotification({
         type: NotificationType.event,
@@ -200,7 +211,7 @@ export class Scheduler {
 
   async insertStalePayoutEvent(chatId: number, nominator: INominatorDb, events: IEventStalePayouts[]) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}.${e.unclaimedPayoutEras.join()}`);
+      const eventHash = sha256(`StalePayout.${chatId}.${nominator.address}.${e.era}.${e.address}.${e.unclaimedPayoutEras.join()}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
       // const chain = getApiChain(nominator.address);
       // const identity = await this._chainData.queryIdentity(nominator.address, chain);
@@ -215,17 +226,58 @@ export class Scheduler {
     });
   }
 
-  async insertPayoutEvent(chatId: number, nominator: INominatorDb, events: IEventPayouts[]) {
+  async insertPayoutEvent(chatId: number, nominator: INominatorDb, events: IEventPayouts[], chain: string) {
     events.forEach(async (e) => {
-      const eventHash = sha256(`${chatId}.${nominator.address}.${e.era}.${e.address}${e.amount}`);
+      const eventHash = sha256(`Payout.${chatId}.${nominator.address}.${e.era}.${e.address}${e.amount}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
-      const chain = getApiChain(nominator.address);
       const decimal = (chain === 'KSM') ? 12 : 10;
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
         message: `💰 Payout Event to ${account}: received ${e.amount.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain} at era ${e.era}`,
+        sent: false
+      })
+    });
+  }
+
+  async insertKickEvent(chatId: number, nominator: INominatorDb, events: IKicks[]) {
+    events.forEach(async (e) => {
+      const eventHash = sha256(`Kick.${chatId}.${nominator.address}.${e.era}.${e.address}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      await this._db.addNotification({
+        type: NotificationType.event,
+        eventHash: eventHash.toString(),
+        chatId: chatId,
+        message: `🔥🔥 Kick Event to ${account}: has kicked by the validator ${e.address}`,
+        sent: false
+      })
+    });
+  }
+
+  async insertChillEvent(chatId: number, nominator: INominatorDb, events: IChills[]) {
+    events.forEach(async (e) => {
+      const eventHash = sha256(`Chill.${chatId}.${nominator.address}.${e.era}.${e.address}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      await this._db.addNotification({
+        type: NotificationType.event,
+        eventHash: eventHash.toString(),
+        chatId: chatId,
+        message: `🥶 Chill Event to ${account}: the validator ${e.address} is chilled.`,
+        sent: false
+      })
+    });
+  }
+
+  async insertOverSubscribeEvent(chatId: number, nominator: INominatorDb, events: IOverSubscribes[], chain: string) {
+    events.forEach(async (e) => {
+      const eventHash = sha256(`Chill.${chatId}.${nominator.address}.${e.era}.${e.address}`);
+      const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      await this._db.addNotification({
+        type: NotificationType.event,
+        eventHash: eventHash.toString(),
+        chatId: chatId,
+        message: `💸 Oversubscribe Event to ${account}: the validator ${e.address} is oversubscribed.`,
         sent: false
       })
     });

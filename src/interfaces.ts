@@ -45,6 +45,9 @@ export enum SetEventCallback {
   toggleInactive = 'toggleInactive',
   toggleStalePayout = 'toggleStalePayout',
   togglePayout = 'togglePayout',
+  toggleKick = 'toggleKick',
+  toggleChill = 'toggleChill',
+  toggleOverSubscribe = 'toggleOverSubscribe',
   done = 'done'
 }
 export interface IChat {
@@ -62,6 +65,9 @@ export interface IChat {
   sendInactives: boolean,
   sendStalePayouts: boolean,
   sendPayouts: boolean,
+  sendKicks: boolean,
+  sendChills: boolean,
+  sendOverSubscribes: boolean,
 }
 
 export interface INominatorDb {
@@ -130,12 +136,31 @@ export interface IEventPayouts {
   address: string;
 }
 
+export interface IKicks {
+  era: number;
+  address: string;
+  nominator: string;
+}
+
+export interface IChills {
+  era: number;
+  address: string;
+}
+
+export interface IOverSubscribes {
+  era: number;
+  address: string;
+}
+
 export interface IEventsInfo {
   commissions: IEventCommissions[];
   slashes: IEventSlashes[];
   inactive: number[];
   stalePayouts: IEventStalePayouts[];
   payouts: IEventPayouts[];
+  kicks: IKicks[];
+  chills: IChills[];
+  overSubscribes: IOverSubscribes[];
 }
 
 export interface IEventQuery {
