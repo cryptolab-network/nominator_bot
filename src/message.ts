@@ -100,7 +100,7 @@ export const listAccount = (): string => {
 
 export const listKeyboard = (nominators: INominatorDb[]): ReplyKeyboardMarkup => {
   const buttons = nominators.map((n) => {
-    console.log(n);
+    // console.log(n);
     if (n.displayname !== '') {
       return [{text: n.displayname}];
     } else {

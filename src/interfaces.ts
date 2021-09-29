@@ -150,6 +150,8 @@ export interface IChills {
 export interface IOverSubscribes {
   era: number;
   address: string;
+  amount: string;
+  nominator: string;
 }
 
 export interface IEventsInfo {

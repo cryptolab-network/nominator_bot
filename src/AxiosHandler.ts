@@ -36,7 +36,10 @@ export const apiGetNotificationEvents = (data: IEventParams): Promise<IEventsInf
         inactives: [],
         slashes: [],
         stalePayouts: [],
-        payouts: []
+        payouts: [],
+        kicks: [],
+        chills: [],
+        overSubscribes: []
       };
     });
 

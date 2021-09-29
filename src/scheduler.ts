@@ -89,7 +89,7 @@ export class Scheduler {
               chain
             },
             query: {
-              from_era: (chain === 'KSM') ? currentEraKusama - 1 : currentEraPolkadot - 0,
+              from_era: (chain === 'KSM') ? currentEraKusama - 1 : currentEraPolkadot - 1,
               to_era: (chain === 'KSM') ? currentEraKusama : currentEraPolkadot
             }
           });
@@ -100,6 +100,7 @@ export class Scheduler {
           // console.log(events);
           // insert received events into notification collection
           const { commissions, slashes, inactive, stalePayouts, payouts, kicks, chills, overSubscribes } = events;
+
           // const commissions = [{
           //   commissionFrom: 1,
           //   commissionTo: 2.0,
@@ -124,6 +125,29 @@ export class Scheduler {
           //   amount: 1233141234,
           //   address: 'JBuHBvnqpyb1Qtm7173z4ET1BnmjTMcdDdo7WzbnSbGa4vZ',
           // }]
+
+          // const kicks = [
+          //   {
+          //     era: 0,
+          //     address: '1213241341344adsfadf',
+          //     nominator: '124dserqwerqef'
+          //   }
+          // ];
+          // const chills = [
+          //   {
+          //     era: 0,
+          //     address: 'dfasdfasdfasdf'
+          //   }
+          // ]
+          // const overSubscribes = [
+          //   {
+          //     era: 0,
+          //     address: 'asdfasdf',
+          //     amount: '982746378921',
+          //     nominator: 'sdfasdfdfasdf'
+          //   }
+          // ]
+
           if (chat.sendCommissions && commissions) {
             await this.insertCommissionEvent(chat.id, nominator, commissions);
           }
@@ -189,7 +213,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💸 Slashes Event to ${account}: the nominee ${e.validator} gets slashed ${e.total.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain} at era ${e.era}.`,
+        message: `💸 Slashes Event to ${account}: the nominee ${e.validator} gets slashed ${e.total * 1.0 / 10**decimal} ${chain} at era ${e.era}.`,
         sent: false
       });
     });
@@ -273,11 +297,12 @@ export class Scheduler {
     events.forEach(async (e) => {
       const eventHash = sha256(`Chill.${chatId}.${nominator.address}.${e.era}.${e.address}`);
       const account = (nominator.displayname !== '') ? nominator.displayname : nominator.address;
+      const decimal = (chain === 'KSM') ? 12 : 10;
       await this._db.addNotification({
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💸 Oversubscribe Event to ${account}: the validator ${e.address} is oversubscribed.`,
+        message: `💸 Oversubscribe Event to ${account}: your ${parseInt(e.amount) * 1.0 / 10 ** decimal} ${chain} is oversubscribed on the validator ${e.address}.`,
         sent: false
       })
     });

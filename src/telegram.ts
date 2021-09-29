@@ -81,7 +81,8 @@ export class Telegram {
     });
 
     this._bot.on('message', async (msg) => {
-      console.log(msg);
+      // console.log(msg);
+      console.log(`received msg from ${msg.from?.username}: ${msg.text}`);
 
       const chatId = msg.chat.id;
       const data: string | undefined = msg.text;
@@ -270,7 +271,7 @@ export class Telegram {
           // received a display name
           if (data.length > 0) {
             const chat = await this._db.getChat(chatId);
-            console.log(chat);
+            // console.log(chat);
             if (chat && chat.state_data.setdisplaynameAddress !== '') {
               const result = await this._db.updateNominatorDisplayname(chatId, chat.state_data.setdisplaynameAddress, data);
               if (result === DbStatusCode.success) {
@@ -288,8 +289,8 @@ export class Telegram {
         }
         break;
         case ChatState.setEvents: {
-          console.log(ChatState.setEvents);
-          console.log(data);
+          // console.log(ChatState.setEvents);
+          // console.log(data);
           await this._db.updateChatStatus(chatId, ChatState.idle);
         }
         break;
