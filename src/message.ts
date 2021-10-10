@@ -22,6 +22,12 @@ export const addNominator = (): string => {
   `);
 }
 
+export const nominatorLimit = (): string => {
+  return dedent(`
+    ⛔ Sorry. The bot only supports three nominators right now. 
+  `);
+}
+
 export const tryAgainLater = (): string => {
   return dedent(`
     ❗ Something went wrong, please try again later. Thank you.

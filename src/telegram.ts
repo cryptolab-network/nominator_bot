@@ -4,10 +4,11 @@ import { ChatState, IChat, DbStatusCode, Commands } from './interfaces';
 import { verifyAddress, getApiChain } from './utils';
 import { help, addNominator, tryAgainLater, invalidAccount, existNominatorAccount, addNominatorOk, noNominee, noNominators,
   removeAccount, removeKeyboard, removeNominatorOk, listKeyboard, listAccount, setEventsKeyboard, setDisplayName, successDisplayName,
-  accountNotFound, toggleEvents, toggleEventsDone, showNomintorChainInfo, visitCryptoLab
+  accountNotFound, toggleEvents, toggleEventsDone, showNomintorChainInfo, visitCryptoLab, nominatorLimit
 } from './message';
 import { ChainData } from './chaindata';
 import { apiGetInfoNominator } from './AxiosHandler';
+import { keys } from './config/keys';
 
 export class Telegram {
   private _bot: TelegramBot;
@@ -89,11 +90,16 @@ export class Telegram {
 
       if (data) {
         if (data === '/add') {
-          const result = await this._db.updateChatStatus(chatId, ChatState.add);
-          if (result === DbStatusCode.success) {
-            await this._bot.sendMessage(chatId, addNominator());
+          const nominators = await this._db.getAllNominators(chatId);
+          if (nominators.length >= parseInt(keys.NOMINATOR_LIMIT)) {
+            await this._bot.sendMessage(chatId, nominatorLimit());
           } else {
-            await this._bot.sendMessage(chatId, tryAgainLater());
+            const result = await this._db.updateChatStatus(chatId, ChatState.add);
+            if (result === DbStatusCode.success) {
+              await this._bot.sendMessage(chatId, addNominator());
+            } else {
+              await this._bot.sendMessage(chatId, tryAgainLater());
+            }
           }
         } else if (data === '/remove') {
           const nominators = await this._db.getAllNominators(chatId);

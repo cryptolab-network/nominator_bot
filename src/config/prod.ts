@@ -8,5 +8,6 @@ export =  {
   MONGO_URL: process.env.MONGO_URL,
   MONGO_PORT: process.env.MONGO_PORT,
   MONGO_DBNAME: process.env.MONGO_DBNAME,
-  BACKEND_URL: process.env.BACKEND_URL
+  BACKEND_URL: process.env.BACKEND_URL,
+  NOMINATOR_LIMIT: process.env.NOMINATOR_LIMIT
 }
