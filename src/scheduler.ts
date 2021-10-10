@@ -197,7 +197,7 @@ export class Scheduler {
           type: NotificationType.event,
           eventHash: eventHash.toString(),
           chatId: chatId,
-          message: `〽️ Commission Event to ${account}: the nominee ${e.address} change its commission from ${e.commissionFrom}% to ${e.commissionTo}%`,
+          message: `〽️ [Commission Event] to ${account}: the nominee ${e.address} change its commission from ${e.commissionFrom}% to ${e.commissionTo}%`,
           sent: false
         });
       }
@@ -213,7 +213,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💸 Slashes Event to ${account}: the nominee ${e.validator} gets slashed ${e.total * 1.0 / 10**decimal} ${chain} at era ${e.era}.`,
+        message: `💸 [Slashes Event] to ${account}: the nominee ${e.validator} gets slashed ${e.total * 1.0 / 10**decimal} ${chain} at era ${e.era}.`,
         sent: false
       });
     });
@@ -227,7 +227,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `⏸️ Inactive Event to ${account}: all nominees are inactive.`,
+        message: `⏸️ [Inactive Event] to ${account}: all nominees are inactive.`,
         sent: false
       });
     })
@@ -244,7 +244,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💤 Stale Payout Event to ${account}: the nominee ${e.address} has unclaimed payouts at ${e.unclaimedPayoutEras.join(' ')} era`,
+        message: `💤 [Stale Payout Event] to ${account}: the nominee ${e.address} has unclaimed payouts at ${e.unclaimedPayoutEras.join(' ')} era`,
         sent: false
       })
     });
@@ -259,7 +259,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💰 Payout Event to ${account}: received ${e.amount.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain} at era ${e.era}`,
+        message: `💰 [Payout Event] to ${account}: received ${e.amount.toLocaleString('fullwide', {useGrouping:false, maximumSignificantDigits: decimal})} ${chain} at era ${e.era}`,
         sent: false
       })
     });
@@ -273,7 +273,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `🔥🔥 Kick Event to ${account}: has kicked by the validator ${e.address}`,
+        message: `🔥🔥 [Kick Event] to ${account}: has kicked by the validator ${e.address}`,
         sent: false
       })
     });
@@ -287,7 +287,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `🥶 Chill Event to ${account}: the validator ${e.address} is chilled.`,
+        message: `🥶 [Chill Event] to ${account}: the validator ${e.address} is chilled.`,
         sent: false
       })
     });
@@ -302,7 +302,7 @@ export class Scheduler {
         type: NotificationType.event,
         eventHash: eventHash.toString(),
         chatId: chatId,
-        message: `💸 Oversubscribe Event to ${account}: your ${parseInt(e.amount) * 1.0 / 10 ** decimal} ${chain} is oversubscribed on the validator ${e.address}.`,
+        message: `💸 [Oversubscribe Event] to ${account}: your ${parseInt(e.amount) * 1.0 / 10 ** decimal} ${chain} is oversubscribed on the validator ${e.address}.`,
         sent: false
       })
     });
