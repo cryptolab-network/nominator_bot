@@ -15,7 +15,7 @@ const sleep = async (ms:number) => {
 
 const executeBot = async () => {
   const db = new Db();
-  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}`);
+  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?retryWrites=false`);
 
   const apiHandler = await ApiHandler.create(keys.API_WSS_KUSAMA, keys.API_WSS_POLKADOT);
   if (!apiHandler) {
