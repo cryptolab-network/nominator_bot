@@ -15,7 +15,7 @@ const sleep = async (ms:number) => {
 
 const executeBot = async () => {
   const db = new Db();
-  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?retryWrites=false`);
+  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?authSource=admin`);
 
   const apiHandler = await ApiHandler.create(keys.API_WSS_KUSAMA, keys.API_WSS_POLKADOT);
   if (!apiHandler) {
@@ -34,7 +34,7 @@ const executeBot = async () => {
 
 const executeEvent = async () => {
   const db = new Db();
-  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?retryWrites=false`);
+  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?authSource=admin`);
 
   const apiHandler = await ApiHandler.create(keys.API_WSS_KUSAMA, keys.API_WSS_POLKADOT);
   if (!apiHandler) {
@@ -50,7 +50,7 @@ const executeEvent = async () => {
 
 const main = async () => {
   const db = new Db();
-  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?retryWrites=false`);
+  await db.connect(`mongodb://${keys.MONGO_USERNAME}:${keys.MONGO_PWD}@${keys.MONGO_URL}:${keys.MONGO_PORT}/${keys.MONGO_DBNAME}?authSource=admin`);
 
   const apiHandler = await ApiHandler.create(keys.API_WSS_KUSAMA, keys.API_WSS_POLKADOT);
   if (!apiHandler) {
