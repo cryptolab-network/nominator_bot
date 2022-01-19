@@ -313,12 +313,16 @@ export class Scheduler {
     const unsent = await this._db.getUnsentNotifications();
     if (unsent !== null) {
       for (let n of unsent) {
-        await this._telegramBot?.sendMessage(n.chatId.valueOf(), n.message.toString());
-        if (n._id) {
-          await this._db.updateNotificationToSent(n._id.toString());
+        try {
+          await this._telegramBot?.sendMessage(n.chatId.valueOf(), n.message.toString());
+          if (n._id) {
+            await this._db.updateNotificationToSent(n._id.toString());
+          }
+          console.log(`sent:`);
+          console.log(`${n.message}`);
+        } catch (error) {
+          console.log(`failed to send notification: ${n.chatId.valueOf()} - ${n.message.toString()}`);
         }
-        console.log(`sent:`);
-        console.log(`${n.message}`);
       }
     }
     console.timeEnd('scheduler :: sendNotifications');
