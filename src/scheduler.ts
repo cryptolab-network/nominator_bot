@@ -71,7 +71,9 @@ export class Scheduler {
     console.time('scheduler :: pollingEvents');
     // get current era
     const currentEraKusama = await this._chainData.getActiveEra('Kusama');
+    console.log(`currentEraKusama = ${currentEraKusama}`);
     const currentEraPolkadot = await this._chainData.getActiveEra('Polkadot');
+    console.log(`currentEraPolkadot = ${currentEraPolkadot}`);
     // retrive all nominators
     const chats = await this._db.getAllChats();
     if (chats === null) {
@@ -83,6 +85,7 @@ export class Scheduler {
         nominators.forEach(async (nominator) => {
           // polling events
           const chain = getApiChain(nominator.address);
+          console.log(`chain = ${chain}`)
           const events = await apiGetNotificationEvents({
             params: {
               id: nominator.address,
@@ -99,7 +102,9 @@ export class Scheduler {
           // console.log(`to_era: ${(chain === 'KSM') ? currentEraKusama : currentEraPolkadot}`);
           // console.log(events);
           // insert received events into notification collection
+          
           const { commissions, slashes, inactive, stalePayouts, payouts, kicks, chills, overSubscribes } = events;
+          console.log(`events payouts = ${payouts.length}`);
 
           // const commissions = [{
           //   commissionFrom: 1,
